@@ -2,6 +2,7 @@ var fs = require('fs');
 var readline = require('readline');
 var google = require('googleapis');
 var googleAuth = require('google-auth-library');
+var content = require('./client_secret.json');
 
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/calendar-nodejs-quickstart.json
@@ -86,42 +87,26 @@ function storeToken(token) {
 
 const getCalendarEvents = (limit) => {
   return new Promise((resolve, reject) => {
-    fs.readFile('client_secret.json', function processClientSecrets(err, content) {
-      if (err) {
-        reject(err);
-      }
-      // Authorize a client with the loaded credentials, then call the
-      // Google Calendar API.
-      authorize(JSON.parse(content), (auth, callback) => {
-        var calendar = google.calendar('v3');
-        calendar.events.list({
-          auth: auth,
-          calendarId: 'primary',
-          timeMin: (new Date()).toISOString(),
-          maxResults: limit || 25,
-          singleEvents: true,
-          orderBy: 'startTime'
-        }, function (err, response) {
-          if (err) {
-            reject(err);
-          }
-          var events = response.items;
-          resolve(events);
-        });
+    // Authorize a client with the loaded credentials, then call the
+    // Google Calendar API.
+    authorize(content, (auth) => {
+      var calendar = google.calendar('v3');
+      calendar.events.list({
+        auth: auth,
+        calendarId: 'primary',
+        timeMin: (new Date()).toISOString(),
+        maxResults: limit || 25,
+        singleEvents: true,
+        orderBy: 'startTime'
+      }, (err, response) => {
+        if (err) {
+          reject(err);
+        }
+        var events = response.items;
+        resolve(events);
       });
     });
   });
 };
-
-
-
-getCalendarEvents().then((events) => {
-  console.log('Upcoming 10 events:');
-  for (var i = 0; i < events.length; i++) {
-    var event = events[i];
-    var start = event.start.dateTime || event.start.date;
-    console.log('%s - %s @ %s', start, event.summary, event.location);
-  }
-});
 
 module.exports = { getCalendarEvents };
