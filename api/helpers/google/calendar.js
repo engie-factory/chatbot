@@ -85,20 +85,19 @@ function storeToken(token) {
   console.log('Token stored to ' + TOKEN_PATH);
 }
 
-const getCalendarEvents = (auth, calendar, calendarId, limit) => {
+const getCalendarEvents = (auth, calendar, item, limit) => {
   return new Promise((resolve, reject) => {
     calendar.events.list({
       auth: auth,
-      calendarId,
+      calendarId: item.id,
       timeMin: (new Date()).toISOString(),
       maxResults: limit || 25,
-      singleEvents: false,
-      orderBy: 'startTime'
+      singleEvents: false
     }, (err, response) => {
       if (err) {
-        reject(err);
+        return reject(err);
       }
-      resolve(response);
+      return resolve(Object.assign(item, { events: response.items }));
     });
   });
 };
@@ -117,17 +116,13 @@ const listCalendarsEvents = (limit) => {
         singleEvents: false
       }, (err, response) => {
         if (err) {
-          reject(err);
+          return reject(err);
         }
         const calendars = response.items;
-        const eventsPromises = response.items.map(cal => getCalendarEvents(auth, calendar, cal.id, 10));
-        console.log(eventsPromises);
-        Promise.all(eventsPromises).then(items => {
-          const events = [];
-          for (let i = 0; i < items.length; i += 1) {
-            events.concat(items[i]);
-          }
-          resolve(events);
+        const eventsPromises = calendars.map(item => getCalendarEvents(auth, calendar, item, 10));
+        Promise.all(eventsPromises).then((items) => {
+          console.log(items);
+          return resolve(items);
         }).catch(err => reject(err));
       });
     });
