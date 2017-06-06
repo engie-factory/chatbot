@@ -108,7 +108,6 @@ const listCalendarsEvents = (limit) => {
     // Google Calendar API.
     authorize(content, (auth) => {
       var calendar = google.calendar('v3');
-      // console.log(calendar);
       calendar.calendarList.list({
         auth: auth,
         timeMin: (new Date()).toISOString(),
@@ -121,7 +120,6 @@ const listCalendarsEvents = (limit) => {
         const calendars = response.items;
         const eventsPromises = calendars.map(item => getCalendarEvents(auth, calendar, item, 10));
         Promise.all(eventsPromises).then((items) => {
-          console.log(items);
           return resolve(items);
         }).catch(err => reject(err));
       });
