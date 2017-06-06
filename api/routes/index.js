@@ -4,7 +4,7 @@ const calendar = require('../helpers/google/calendar');
 
 /* GET home page. */
 router.get('/events', (req, res, next) => {
-  calendar.getCalendarEvents(req.query.limit || 50)
+  calendar.listCalendarsEvents(req.query.limit || 50)
     .then((events) => {
       res.json(events);
     })

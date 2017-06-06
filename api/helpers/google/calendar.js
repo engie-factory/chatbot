@@ -85,28 +85,53 @@ function storeToken(token) {
   console.log('Token stored to ' + TOKEN_PATH);
 }
 
-const getCalendarEvents = (limit) => {
+const getCalendarEvents = (auth, calendar, calendarId, limit) => {
+  return new Promise((resolve, reject) => {
+    calendar.events.list({
+      auth: auth,
+      calendarId,
+      timeMin: (new Date()).toISOString(),
+      maxResults: limit || 25,
+      singleEvents: false,
+      orderBy: 'startTime'
+    }, (err, response) => {
+      if (err) {
+        reject(err);
+      }
+      resolve(response);
+    });
+  });
+};
+
+const listCalendarsEvents = (limit) => {
   return new Promise((resolve, reject) => {
     // Authorize a client with the loaded credentials, then call the
     // Google Calendar API.
     authorize(content, (auth) => {
       var calendar = google.calendar('v3');
-      calendar.events.list({
+      // console.log(calendar);
+      calendar.calendarList.list({
         auth: auth,
-        calendarId: 'primary',
         timeMin: (new Date()).toISOString(),
         maxResults: limit || 25,
-        singleEvents: true,
-        orderBy: 'startTime'
+        singleEvents: false
       }, (err, response) => {
         if (err) {
           reject(err);
         }
-        var events = response.items;
-        resolve(events);
+        const calendars = response.items;
+        const eventsPromises = response.items.map(cal => getCalendarEvents(auth, calendar, cal.id, 10));
+        console.log(eventsPromises);
+        Promise.all(eventsPromises).then(items => {
+          const events = [];
+          for (let i = 0; i < items.length; i += 1) {
+            events.concat(items[i]);
+          }
+          resolve(events);
+        }).catch(err => reject(err));
       });
     });
   });
 };
 
-module.exports = { getCalendarEvents };
+module.exports = { listCalendarsEvents };
